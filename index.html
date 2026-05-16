@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北京中轴线时空故事地图</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "微软雅黑"; }
+
+        /* 新增：顶部标题 */
+        .header {
+            background: #c81623;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .layout { display: flex; width: 100vw; height: calc(100vh - 48px); }
+        #map { flex: 1; height: 100%; }
+        .story { width: 320px; background: #fff; padding: 25px; border-left: 3px solid #c81623; overflow-y: auto; }
+        .story h2 { color: #c81623; text-align: center; margin-bottom: 20px; }
+        .section { display: none; line-height: 1.7; margin-bottom: 30px; }
+        .section.active { display: block; }
+        .section img { width: 100%; border-radius: 6px; margin: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        
+        /* 新增：时间标签样式 */
+        .time {
+            color: #c81623;
+            font-weight: bold;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .controls { position: absolute; bottom: 20px; left: 20px; z-index: 999; display: flex; gap: 8px; }
+        .btn { padding: 10px 16px; background: #c81623; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .btn.gray { background: #555; }
+
+        /* 弹窗图片样式 */
+        .popup-img { width: 200px; border-radius: 4px; margin-bottom: 6px; }
+    </style>
+</head>
+
+<body>
+
+<!-- 新增：顶部标题 -->
+<div class="header">北京中轴线时空叙事故事地图</div>
+
+<div class="layout">
+    <div id="map"></div>
+    <div class="story">
+        <h2>北京千年时空叙事</h2>
+
+        <div class="section active" id="p1">
+            <h3>【开端】元大都奠基</h3>
+            <div class="time">时间：公元1267年</div>
+            <img src="yuandadu.png" alt="元大都遗址">
+            <p>1267年，元大都始建，中轴线正式诞生。城市依水而建，对称布局，奠定了北京数百年的城市骨架。</p>
+        </div>
+
+        <div class="section" id="p2">
+            <h3>【发展】明清皇城鼎盛</h3>
+            <div class="time">时间：明清时期</div>
+            <img src="gugong.png" alt="故宫全景">
+            <p>故宫、天坛、景山沿中轴线排布，皇权、礼制、信仰融为一体，中轴线成为国家精神的地理象征。</p>
+        </div>
+
+        <div class="section" id="p3">
+            <h3>【高潮】现代城市新生</h3>
+            <div class="time">时间：2008年至今</div>
+            <img src="aolinpike.png" alt="奥林匹克公园">
+            <p>奥林匹克公园、CBD拔地而起，古老轴线向北延伸，传统与现代在此交汇碰撞。</p>
+        </div>
+
+        <div class="section" id="p4">
+            <h3>【结尾】世界文化遗产</h3>
+            <div class="time">时间：2023年</div>
+            <img src="shenyi.png" alt="北京中轴线申遗">
+            <p>2023年，北京中轴线申遗成功。一条线，一座城，七百年文脉永续传承。</p>
+        </div>
+    </div>
+</div>
+
+<div class="controls">
+    <button class="btn" id="play">开始故事漫游</button>
+    <button class="btn gray" id="layer1">元代</button>
+    <button class="btn gray" id="layer2">明清</button>
+    <button class="btn gray" id="layer3">现代</button>
+</div>
+
+<script>
+// 初始化地图
+const map = L.map('map').setView([39.9042, 116.4074], 10);
+
+// 高德底图（永久稳定显示）
+const baseMap = L.tileLayer('https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    maxZoom: 18
+}).addTo(map);
+
+// 新增：中轴线红色主线（加分核心）
+const axis = L.polyline([
+    [39.873, 116.392],
+    [39.916, 116.397],
+    [39.955, 116.403]
+], { color: '#c81623', weight: 5, opacity: 0.7 }).addTo(map);
+
+// ✅ 已修复：图标地址（这里是唯一改动的地方）
+const icon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+    iconSize: [30, 30],
+    iconAnchor: [15, 30]
+});
+
+// 点位 + 新增：弹窗带图片
+const p1 = L.marker([39.942, 116.376], { icon }).bindPopup(`
+<img class="popup-img" src="yuandadu.png"><br>
+<b>元大都遗址</b><br>中轴线起源
+`);
+
+const p2 = L.marker([39.916, 116.397], { icon }).bindPopup(`
+<img class="popup-img" src="gugong.png"><br>
+<b>故宫</b><br>中轴线核心
+`);
+
+const p3 = L.marker([39.882, 116.411], { icon }).bindPopup(`
+<b>天坛</b><br>明清祭祀圣地
+`);
+
+const p4 = L.marker([39.992, 116.399], { icon }).bindPopup(`
+<img class="popup-img" src="aolinpike.png"><br>
+<b>奥林匹克公园</b><br>现代中轴线新地标
+`);
+
+const p5 = L.marker([39.910, 116.453], { icon }).bindPopup(`
+<b>北京CBD</b><br>现代都市中心
+`);
+
+// 图层组
+const yuan = L.layerGroup([p1]);
+const ming = L.layerGroup([p2, p3]);
+const modern = L.layerGroup([p4, p5]);
+
+// 切换文字
+function show(n) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('p' + n).classList.add('active');
+}
+
+// 清空覆盖物（不清空底图 + 中轴线）
+function clear() {
+    map.eachLayer(layer => {
+        if (layer !== baseMap && layer !== axis) {
+            map.removeLayer(layer);
+        }
+    });
+}
+
+// 自动故事
+document.getElementById('play').onclick = () => {
+    clear();
+    map.setView([39.942, 116.376], 11);
+    yuan.addTo(map); show(1);
+
+    setTimeout(() => {
+        map.panTo([39.916, 116.397]);
+        ming.addTo(map); show(2);
+    }, 2600);
+
+    setTimeout(() => {
+        map.setView([39.910, 116.420], 13);
+        modern.addTo(map); show(3);
+    }, 5200);
+
+    setTimeout(() => {
+        map.setView([39.9042, 116.4074], 10);
+        show(4);
+    }, 7800);
+};
+
+// 手动图层
+document.getElementById('layer1').onclick = () => { clear(); yuan.addTo(map); map.setView([39.942, 116.376], 11); show(1); }
+document.getElementById('layer2').onclick = () => { clear(); ming.addTo(map); map.setView([39.916, 116.397], 12); show(2); }
+document.getElementById('layer3').onclick = () => { clear(); modern.addTo(map); map.setView([39.910, 116.420], 13); show(3); }
+
+</script>
+</body>
+</html>
